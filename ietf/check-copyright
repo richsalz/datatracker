@@ -6,9 +6,6 @@ use warnings;
 use POSIX qw/strftime/;
 use Getopt::Std;
 
-# Getopt settings.
-our($opt_f, $opt_h, $opt_c, $opt_l, $opt_m);
-
 # Number of errors found; exit status
 my $ERRORS = 0;
 
@@ -18,14 +15,18 @@ my $some_year  = "[12][0-9][0-9][0-9]";
 my $year_range = "(${some_year})(-${some_year})?";
 my $copyright  = "Copyright The IETF Trust *${year_range}";
 
+# Getopt settings.
+our($opt_h, $opt_f, $opt_v, $opt_c, $opt_l, $opt_m);
+
 sub
 usage()
 {
     my $retcode = pop();
 
     print STDERR "Options:\n";
-    print STDERR "    -f   Read filenames from argv\n";
     print STDERR "    -h   This help message\n";
+    print STDERR "    -f   Read filenames from argv\n";
+    print STDERR "    -v   List files as processed\n";
     print STDERR "    -c   Modify files that should be changed\n";
     print STDERR "         (Does not do a git commit)\n";
     print STDERR "    -l   List files that need to be changed\n";
@@ -65,6 +66,8 @@ process()
     my $found = 0;
     my $changed = 0;
     my $SAVE;
+
+    print "# Processing $NAME\n" if defined $opt_v;
 
     # ignore ZIP files
     return if $NAME =~ /\.zip/;
