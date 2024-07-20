@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2024. All Rights Reserved.
 name: Copyright years
 on: [pull_request, push]
 permissions:

@@ -109,7 +109,7 @@ process()
 }
 
 ##  Parse JCL.
-getopts('fhclm') || &usage(1);
+getopts('hfvclm') || &usage(1);
 &usage(0) if $opt_h;
 if ( defined($opt_m) + defined($opt_l) + defined($opt_c) != 1 ) {
     print STDERR "Must have exactly one of m/l/c options\n";
