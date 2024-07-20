@@ -7,7 +7,10 @@ use POSIX qw/strftime/;
 use Getopt::Std;
 
 # Getopt settings.
-our($opt_h, $opt_c, $opt_l, $opt_m);
+our($opt_f, $opt_h, $opt_c, $opt_l, $opt_m);
+
+# Number of errors found; exit status
+my $ERRORS = 0;
 
 # Convenience variables, for the copyright year regexp patterns.
 my $this_year  = strftime("%Y", localtime);
@@ -21,6 +24,7 @@ usage()
     my $retcode = pop();
 
     print STDERR "Options:\n";
+    print STDERR "    -f   Read filenames from argv\n";
     print STDERR "    -h   This help message\n";
     print STDERR "    -c   Modify files that should be changed\n";
     print STDERR "         (Does not do a git commit)\n";
@@ -46,7 +50,6 @@ collect_files
     while ( <$FH> ) {
         @FIELDS = split();
         next if $FIELDS[0] =~ /D/;        # ignore deleted files
-        next if $FIELDS[1] =~ /\.zip/;    # ignore ZIP files
         push(@FILES, $FIELDS[1]);
     }
     close($FH) || die "Can't close diff-tree";
@@ -62,6 +65,9 @@ process()
     my $found = 0;
     my $changed = 0;
     my $SAVE;
+
+    # ignore ZIP files
+    return if $NAME =~ /\.zip/;
 
     # Read the file, copying to $NEW and changing copyright
     # along the way.
@@ -79,8 +85,9 @@ process()
     close($FH) || die "Can't close $NAME, $!";
 
     # Copyright missing?
-    if ( defined $opt_m && ! $found ) {
-        print "$NAME\n";
+    if ( defined $opt_m ) {
+        print "$NAME\n" if ! $found;
+        $ERRORS++;
         return;
     }
 
@@ -89,6 +96,7 @@ process()
 
     if ( defined $opt_l ) {
         print "$NAME\n";
+        $ERRORS++;
     } else {
         # Write the new file
         open my $FH, '>', $NAME || die "Can't close-write $NAME, $!";
@@ -98,7 +106,7 @@ process()
 }
 
 ##  Parse JCL.
-getopts('hclm') || &usage(1);
+getopts('fhclm') || &usage(1);
 &usage(0) if $opt_h;
 if ( defined($opt_m) + defined($opt_l) + defined($opt_c) != 1 ) {
     print STDERR "Must have exactly one of m/l/c options\n";
@@ -106,6 +114,14 @@ if ( defined($opt_m) + defined($opt_l) + defined($opt_c) != 1 ) {
 }
 
 ##  Do the work.
-foreach my $F ( &collect_files() ) {
+my @FILES = ();
+if ( defined($opt_f) ) {
+    @FILES = @ARGV;
+} else {
+    @FILES = &collect_files();
+}
+
+foreach my $F ( @FILES ) {
     &process($F);
 }
+exit $ERRORS;
